@@ -18,6 +18,7 @@ package com.example.android.trackmysleepquality.sleeptracker
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
 import com.example.android.trackmysleepquality.database.SleepDatabaseDao
@@ -52,7 +53,13 @@ class SleepTrackerViewModel(
         formatNights(nights, application.resources)
     }
 
+    private val _navigateToSleepQuality = MutableLiveData<SleepNight>()
+    val navigateToSleepQuality: LiveData<SleepNight>
+            get() = _navigateToSleepQuality
 
+    fun doneNavigating() {
+        _navigateToSleepQuality.value = null
+    }
 
     init{
         initializeTonight()
@@ -98,13 +105,16 @@ class SleepTrackerViewModel(
 
     fun onStopTracking() { // important component to stop button click handler
         uiScope.launch {
-            // if tonight.value is null, returns from launch, not from the lambda
+            // if tonight.value is null, returns from .launch, not from the lambda
             val oldNight = tonight.value ?: return@launch
 
             // sets end time
             oldNight.endTimeMilli = System.currentTimeMillis()
 
             update(oldNight) // updates database with end time
+
+            // done this way so that if oldNight cannot be set, then won't navigate
+            _navigateToSleepQuality.value = oldNight
         }
     }
 
