@@ -49,8 +49,21 @@ class SleepTrackerViewModel(
 
     private val nights = database.getAllNights()
 
+    // formats display for database entries
     val nightsString = Transformations.map(nights) {nights ->
         formatNights(nights, application.resources)
+    }
+
+    val startButtonVisible = Transformations.map(tonight) {
+        null == it // start button visible when no active SleepNight running
+    }
+
+    val stopButtonVisible = Transformations.map(tonight) {
+        null != it // stop button visible when actively 'recording' time
+    }
+
+    val clearButtonVisible = Transformations.map(nights) {
+        it?.isNotEmpty() // clear only visible when entries exist in the database
     }
 
     private val _navigateToSleepQuality = MutableLiveData<SleepNight>()
@@ -59,6 +72,14 @@ class SleepTrackerViewModel(
 
     fun doneNavigating() {
         _navigateToSleepQuality.value = null
+    }
+
+    private var _showSnackbarEvent = MutableLiveData<Boolean>()
+    val showSnackBarEvent: LiveData<Boolean>
+        get() = _showSnackbarEvent
+
+    fun doneShowingSnackbar() {
+        _showSnackbarEvent.value = false
     }
 
     init{
@@ -128,6 +149,7 @@ class SleepTrackerViewModel(
         uiScope.launch {
             clear()
             tonight.value = null
+            _showSnackbarEvent.value = true
         }
     }
 
